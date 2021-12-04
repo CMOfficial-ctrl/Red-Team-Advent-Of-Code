@@ -14,22 +14,15 @@ func main() {
 	var wg sync.WaitGroup
 	fmt.Printf("Scanning %s...\n", *ip)
 	for p := 1; p <= 65535; p++ {
-		wg.Add(10)
+		wg.Add(1)
 		go func(port int) {
-
 			conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", *ip, port))
-			checkERR(err)
-
+			if err != nil {
+				return
+			}
 			conn.Close()
 			wg.Done()
-
-			fmt.Printf("[] Port %d is open\n", port)
+			fmt.Printf("[] %d is open\n", port)
 		}(p)
-	}
-	fmt.Printf("Done scanning %s!", *ip)
-}
-func checkERR(err error) {
-	if err != nil {
-		return
 	}
 }
