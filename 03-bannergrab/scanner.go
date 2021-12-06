@@ -5,28 +5,35 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"time"
 )
 
 var ip = flag.String("ip", "localhost", "ip to scan")
 
 func main() {
+
 	flag.Parse()
 	var wg sync.WaitGroup
 	fmt.Printf("Scanning %s...\n", *ip)
-	for p := 1; p <= 65535; p++ {
-		wg.Add(10)
+	banner := make([]byte, 256)
+	dialer := net.Dialer{Timeout: 2 * time.Second}
+	for p := 1; p <= 5000; p++ {
+		wg.Add(5)
 		go func(port int) {
-			conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", *ip, port))
-			checkERR(err)
+			conn, err := dialer.Dial("tcp", fmt.Sprintf("%s:%d", *ip, port))
+			if err != nil {
+				return
+			}
+			n, err := conn.Read(banner)
+			if err != nil {
+				return
+			}
+			if n == 0 {
+				return
+			}
+			fmt.Printf("[] %d is open| %s\n", port, string(banner))
 			conn.Close()
 			wg.Done()
-			fmt.Printf("[] Port %d is open\n", port)
 		}(p)
-	}
-	fmt.Printf("Done scanning %s!", *ip)
-}
-func checkERR(err error) {
-	if err != nil {
-		return
 	}
 }
